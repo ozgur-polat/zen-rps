@@ -116,12 +116,180 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Network System
+    class NetworkManager {
+        constructor() {
+            this.peer = null;
+            this.conn = null;
+            this.myId = null;
+            this.isHost = false;
+        }
+
+        generateShortId() {
+            return Math.random().toString(36).substr(2, 6).toUpperCase();
+        }
+
+        initHost(onReady, onConnect) {
+            this.isHost = true;
+            this.myId = this.generateShortId();
+            this.peer = new Peer(this.myId);
+
+            this.peer.on('open', (id) => {
+                console.log('My peer ID is: ' + id);
+                onReady(id);
+            });
+
+            this.peer.on('connection', (conn) => {
+                this.conn = conn;
+                this.setupConnectionHandlers(onConnect);
+            });
+        }
+
+        initJoin(hostId, onConnect, onError) {
+            this.isHost = false;
+            this.peer = new Peer(); // Auto-gen ID for joiner
+
+            this.peer.on('open', () => {
+                this.conn = this.peer.connect(hostId);
+                this.conn.on('open', () => {
+                    this.setupConnectionHandlers(onConnect);
+                });
+                this.conn.on('error', onError);
+            });
+
+            this.peer.on('error', onError);
+        }
+
+        setupConnectionHandlers(onConnect) {
+            onConnect();
+            this.conn.on('data', (data) => {
+                handleNetworkData(data);
+            });
+            this.conn.on('close', () => {
+                alert('Connection lost');
+                location.reload();
+            });
+        }
+
+        send(type, payload = {}) {
+            if (this.conn && this.conn.open) {
+                this.conn.send({ type, ...payload });
+            }
+        }
+    }
+
+    const net = new NetworkManager();
     const sounds = new SoundManager();
 
-    // Game State
+    // Game Logic
     let playerScore = 0;
     let computerScore = 0;
     let isProcessing = false;
+
+    let isMultiplayer = false;
+    let localChoice = null;
+    let remoteChoice = null;
+    let isRemoteReady = false; // For replay sync
+
+    // UI Handling for Screens
+    const screens = {
+        start: document.getElementById('start-screen'),
+        lobby: document.getElementById('lobby-screen'),
+        game: document.getElementById('app') // The main game area
+    };
+
+    function showScreen(name) {
+        screens.start.classList.add('hidden');
+        screens.lobby.classList.add('hidden');
+        if (name === 'game') return; // Game is background, just hide others
+        screens[name].classList.remove('hidden');
+    }
+
+    // Menu Listeners
+    const cpuBtn = document.getElementById('mode-cpu');
+    if (cpuBtn) cpuBtn.addEventListener('click', () => {
+        isMultiplayer = false;
+        showScreen('game');
+    });
+
+    const friendBtn = document.getElementById('mode-friend');
+    if (friendBtn) friendBtn.addEventListener('click', () => {
+        isMultiplayer = true;
+        showScreen('lobby');
+        // Auto-generate host ID immediately for convenience
+        net.initHost((id) => {
+            document.getElementById('room-code-display').innerText = id;
+            document.getElementById('host-status').innerText = "Waiting for friend...";
+        }, () => {
+            // On Connect
+            document.getElementById('host-status').innerText = "Connected!";
+            setTimeout(() => showScreen('game'), 1000);
+            updatePlayerLabels("HOST", "FRIEND");
+        });
+    });
+
+    const joinBtn = document.getElementById('join-btn');
+    if (joinBtn) joinBtn.addEventListener('click', () => {
+        const code = document.getElementById('join-code-input').value.toUpperCase();
+        const status = document.getElementById('join-status');
+        if (code.length < 2) return;
+
+        status.innerText = "Connecting...";
+        net.initJoin(code, () => {
+            status.innerText = "Connected!";
+            setTimeout(() => showScreen('game'), 1000);
+            updatePlayerLabels("FRIEND", "HOST");
+        }, (err) => {
+            status.innerText = "Connection Failed";
+            console.error(err);
+        });
+    });
+
+    const backBtn = document.getElementById('back-btn');
+    if (backBtn) backBtn.addEventListener('click', () => showScreen('start'));
+
+    const copyBtn = document.getElementById('copy-code-btn');
+    if (copyBtn) copyBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(net.myId);
+        const originalText = copyBtn.innerText;
+        copyBtn.innerText = "COPIED!";
+        setTimeout(() => copyBtn.innerText = originalText, 1500);
+    });
+
+    function updatePlayerLabels(p1, p2) {
+        const pLabel = document.querySelector('#score-container .score-block:first-child .score-label');
+        const cLabel = document.querySelector('#score-container .score-block:last-child .score-label');
+        if (pLabel) pLabel.innerText = "YOU";
+        if (cLabel) cLabel.innerText = "ENEMY";
+    }
+
+    function handleNetworkData(data) {
+        console.log('Received:', data);
+        switch (data.type) {
+            case 'CHOICE_COMMITTED':
+                // Opponent has picked.
+                resultText.innerText = "ENEMY READY";
+                cFighter.classList.add('active'); // Show hidden icon
+                updateFighter(cFighter, 'hidden');
+                remoteChoice = 'HIDDEN'; // Placeholder
+                checkRoundReady();
+                break;
+
+            case 'REVEAL_CHOICE':
+                remoteChoice = data.choice;
+                checkRoundReady();
+                break;
+
+            case 'PLAY_AGAIN':
+                // Opponent wants to play again
+                isRemoteReady = true;
+                if (isGameOver) {
+                    document.getElementById('play-again-btn').innerText = "OPPONENT READY";
+                }
+                checkResetReady();
+                break;
+        }
+    }
 
     const CHOICES = ['rock', 'paper', 'scissors'];
     const WINNING_SCORE = 3;
@@ -143,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const muteBtn = document.getElementById('mute-btn');
 
     // Init
-    loadScore();
+    // loadScore(); // Disabled: Score resets on refresh
 
     // Event Listeners
     buttons.forEach(btn => {
@@ -164,6 +332,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!sounds.enabled) muteBtn.classList.add('muted');
     }
 
+
+
     // Keyboard Support
     window.addEventListener('keydown', (e) => {
         if (isProcessing) return;
@@ -179,12 +349,36 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function resetGame() {
         if (isProcessing) return;
+
+        if (isMultiplayer) {
+            net.send('PLAY_AGAIN');
+            // Wait for opponent
+            if (!isRemoteReady) {
+                resultText.innerText = "WAITING FOR OPPONENT";
+                document.getElementById('play-again-btn').innerText = "WAITING...";
+                return;
+            }
+        }
+
+        doReset();
+    }
+
+    function checkResetReady() {
+        if (isMultiplayer && isRemoteReady) {
+            // If I am also at Game Over screen, I can initiate if I clicked too?
+            // Actually, simplified: both must click play again.
+            // When play again clicked -> set localReady.
+            // If localReady && remoteReady -> doReset()
+        }
+    }
+
+    function doReset() {
         playerScore = 0;
         computerScore = 0;
         isGameOver = false;
         controls.classList.remove('disabled');
         updateScoreUI();
-        saveScore();
+        if (!isMultiplayer) saveScore(); // Only save vs CPU
 
         // Visual feedback
         resultText.innerText = "SCORE RESET";
@@ -195,25 +389,68 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             if (!isProcessing) resultText.innerText = "CHOOSE";
         }, 1000);
+
+        isRemoteReady = false;
+        if (isMultiplayer) document.getElementById('play-again-btn').innerText = "PLAY AGAIN";
     }
 
-    function playRound(playerChoice) {
-        isProcessing = true;
+    // REMOVE OLD playRound function to avoid conflict
+    // (Consolidated into the one above)
 
-        // 1. Disable controls
-        controls.classList.add('disabled');
-        resetBtn.disabled = true;
-        resultText.innerText = "";
+    function playRound(playerChoice) {
+        if (isProcessing) return;
+
+        if (isMultiplayer) {
+            // Multiplayer Flow
+            if (localChoice) return; // Already picked
+
+            localChoice = playerChoice;
+            updateFighter(pFighter, 'hidden');
+            pFighter.classList.add('active');
+
+            controls.classList.add('disabled'); // Lock temporarily
+            resultText.innerText = "WAITING...";
+
+            // 1. Send Commit signal
+            net.send('REVEAL_CHOICE', { choice: playerChoice });
+
+            checkRoundReady();
+
+        } else {
+            // CPU Flow (Original)
+            isProcessing = true;
+            controls.classList.add('disabled');
+            resetBtn.disabled = true;
+            resultText.innerText = "";
+            resultText.style.color = "var(--text-color)";
+
+            startShowdown(playerChoice, CHOICES[Math.floor(Math.random() * CHOICES.length)]);
+        }
+    }
+
+    function checkRoundReady() {
+        if (!isMultiplayer) return;
+
+        // We need both choices to proceed
+        if (localChoice && remoteChoice && remoteChoice !== 'HIDDEN') {
+            startShowdown(localChoice, remoteChoice);
+            // Reset for next round
+            localChoice = null;
+            remoteChoice = null;
+        }
+    }
+
+    function startShowdown(pChoice, cChoice) {
+        isProcessing = true;
         resultText.style.color = "var(--text-color)";
 
-        // 2. Setup Arena (Clear to Shake State - Hidden Mystery Icon)
+        // Setup Arena
         updateFighter(pFighter, 'hidden');
         updateFighter(cFighter, 'hidden');
-
         pFighter.classList.add('active');
         cFighter.classList.add('active');
 
-        // 3. Shake + Countdown
+        // Shake
         pFighter.classList.add('shaking');
         cFighter.classList.add('shaking');
 
@@ -229,23 +466,19 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 clearInterval(interval);
 
-                // 4. Reveal
+                // Reveal
                 pFighter.classList.remove('shaking');
                 cFighter.classList.remove('shaking');
 
-                // Show Actual Choices
-                updateFighter(pFighter, playerChoice); // Reveal Player
-                const computerChoice = CHOICES[Math.floor(Math.random() * CHOICES.length)];
-                updateFighter(cFighter, computerChoice); // Reveal CPU
+                updateFighter(pFighter, pChoice);
+                updateFighter(cFighter, cChoice);
 
                 pFighter.classList.add('reveal');
                 cFighter.classList.add('reveal');
 
-                // Logic & Result
-                const result = getWinner(playerChoice, computerChoice);
+                const result = getWinner(pChoice, cChoice);
                 handleResult(result);
 
-                // Cleanup
                 setTimeout(() => {
                     pFighter.classList.remove('reveal');
                     cFighter.classList.remove('reveal');

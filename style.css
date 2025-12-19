@@ -7,7 +7,200 @@
     /* Soft Crimson */
     --accent-tie: #7f8c8d;
     /* Slate Grey */
-    --header-height: 120px;
+    --header-height: 140px;
+    /* Slight increase for breathing room */
+}
+
+/* Unified Icon Buttons */
+.icon-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.3;
+    transition: all 0.3s ease;
+    color: var(--text-color);
+    border-radius: 50%;
+    /* Circular hit area */
+}
+
+.icon-btn:hover {
+    opacity: 1;
+    background: rgba(0, 0, 0, 0.03);
+    /* Subtle hover state */
+    transform: scale(1.05);
+}
+
+.icon-btn svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: var(--text-color);
+    stroke-width: 2;
+    /* Consistent stroke */
+}
+
+/* Screen Management */
+.screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 50;
+    background: var(--bg-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.3s ease, visibility 0.3s;
+}
+
+.screen.hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Start Screen */
+.logo-large svg {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 20px;
+    animation: rotateSlow 20s linear infinite;
+}
+
+@keyframes rotateSlow {
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.title {
+    font-weight: 100;
+    font-size: 2.5rem;
+    letter-spacing: 10px;
+    margin-bottom: 60px;
+    opacity: 0.8;
+}
+
+.menu-btn {
+    background: transparent;
+    border: 1px solid var(--text-color);
+    color: var(--text-color);
+    padding: 15px 40px;
+    margin: 10px;
+    font-size: 1rem;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 280px;
+}
+
+.menu-btn:hover {
+    background: var(--text-color);
+    color: var(--bg-color);
+}
+
+/* Lobby Screen */
+.back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+}
+
+.util-btn svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    /* Important for Zen style */
+    stroke: var(--text-color);
+    /* Inherit color */
+}
+
+/* Specific Reset Icon sizing if needed */
+.reset-icon {
+    width: 20px;
+    height: 20px;
+    fill: var(--text-color);
+}
+
+.lobby-options {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    width: 100%;
+    max-width: 320px;
+    align-items: center;
+}
+
+.lobby-section {
+    width: 100%;
+    text-align: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+}
+
+.lobby-section h3 {
+    font-weight: 300;
+    letter-spacing: 4px;
+    margin-bottom: 5px;
+}
+
+.desc {
+    font-size: 0.8rem;
+    opacity: 0.5;
+    margin-bottom: 15px;
+}
+
+#room-code-display {
+    font-family: monospace;
+    font-size: 2rem;
+    letter-spacing: 5px;
+    margin: 15px 0;
+    font-weight: 600;
+}
+
+.action-btn {
+    background: var(--text-color);
+    color: var(--bg-color);
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+}
+
+input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--text-color);
+    color: var(--text-color);
+    font-size: 1.5rem;
+    text-align: center;
+    letter-spacing: 5px;
+    width: 100%;
+    margin-bottom: 20px;
+    font-family: monospace;
+    outline: none;
+}
+
+.status-text {
+    font-size: 0.8rem;
+    margin-top: 10px;
+    height: 1rem;
+    opacity: 0.7;
+}
+
+.divider {
+    font-size: 0.8rem;
+    opacity: 0.3;
+    letter-spacing: 2px;
 }
 
 * {
@@ -96,45 +289,31 @@ header {
     align-items: center;
     justify-content: center;
     margin-top: 40px;
-    /* More space for button above */
     width: 100%;
     position: relative;
     max-width: 320px;
-    /* Tighter container */
-    height: var(--header-height);
+    /* Allow expansion */
+    height: auto;
+    z-index: 10;
 }
 
-.header-utils {
+
+/* Mute Button - Fixed Top Right */
+#mute-btn {
     position: fixed;
-    top: 20px;
-    right: 20px;
-    left: auto;
-    transform: none;
-    display: flex;
-    gap: 15px;
+    top: 25px;
+    right: 25px;
     z-index: 100;
 }
 
-/* Ensure on top */
 
-.util-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 8px;
-    opacity: 0.5;
-    transition: opacity 0.3s, transform 0.3s;
-    color: var(--text-color);
+
+#mute-btn .unmute-icon {
+    display: none;
 }
 
-.util-btn:hover {
-    opacity: 1;
-    transform: scale(1.1);
-}
-
-.util-btn svg {
-    width: 20px;
-    height: 20px;
+#mute-btn .mute-icon {
+    display: block;
 }
 
 #mute-btn.muted .unmute-icon {
@@ -145,97 +324,72 @@ header {
     display: none;
 }
 
-#mute-btn .unmute-icon {
-    display: none;
-}
 
-#mute-btn .mute-icon {
-    display: block;
-}
-
-#mute-btn .unmute-icon {
-    display: block;
-}
-
-#mute-btn .mute-icon {
-    display: none;
-}
-
-#mute-btn .unmute-icon {
-    display: none;
-}
-
-#mute-btn .mute-icon {
-    display: block;
-}
-
+/* Scoreboard Redesign */
 #score-container {
     display: flex;
-    align-items: flex-start;
-    /* Align Top */
+    align-items: center;
     justify-content: center;
-    /* Center items better */
-    gap: 20px;
-    /* Controlled gap instead of space-between */
+    gap: 80px;
+    /* Wide spacing */
     width: 100%;
-    color: var(--text-color);
-    font-weight: 300;
+    margin-bottom: 10px;
 }
 
 .score-block {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 80px;
-    /* Slightly narrower */
+    position: relative;
 }
 
 .score-label {
-    font-size: 0.75rem;
+    font-size: 0.6rem;
     font-weight: 600;
-    letter-spacing: 2px;
-    opacity: 0.4;
-    margin-bottom: 8px;
-    /* Layout: Top */
-}
-
-#player-score,
-#computer-score {
-    font-size: 3rem;
-    /* Prominent Score */
-    font-weight: 100;
-    line-height: 1;
-}
-
-.score-divider {
-    height: 60px;
-    width: 1px;
-    background-color: var(--text-color);
-    opacity: 0.1;
-    margin-top: 5px;
-}
-
-#target-label {
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     opacity: 0.3;
-    margin-top: 15px;
+    margin-bottom: 5px;
     text-transform: uppercase;
 }
 
-/* Reset Button */
+.score-value {
+    font-size: 4.5rem;
+    /* Very large, thin numbers */
+    font-weight: 100;
+    line-height: 0.9;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Target Label Redesign */
+#target-label {
+    font-size: 0.75rem;
+    font-weight: 400;
+    letter-spacing: 4px;
+    opacity: 0.4;
+    margin-top: 10px;
+    text-transform: uppercase;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    padding-top: 10px;
+    width: 120px;
+    text-align: center;
+}
+
+/* Reset Button - Below Score */
 #reset-btn {
-    margin-top: 25px;
+    margin-top: 20px;
     background: transparent;
     border: none;
     cursor: pointer;
     opacity: 0.2;
     transition: opacity 0.3s;
-    padding: 8px;
+    padding: 15px;
+    /* Larger Hitbox */
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
+    z-index: 20;
+    /* Ensure on top */
 }
 
 #reset-btn:hover {
