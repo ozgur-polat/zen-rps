@@ -288,7 +288,7 @@ header {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin-top: 40px;
+    margin-top: 20px;
     width: 100%;
     position: relative;
     max-width: 320px;
@@ -416,22 +416,41 @@ header {
 
 #arena {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    justify-content: space-between;
     align-items: center;
-    gap: 30px;
-    margin-bottom: 50px;
-    height: 180px;
+    position: relative;
+    flex: 1;
+    /* Fill available space */
+    min-height: 200px;
+    /* Minimum for anims */
+    margin: 10px 0;
+    /* Minimal vertical margin */
+    width: 100%;
+    max-width: 320px;
 }
 
 .fighter {
-    width: 120px;
-    /* Slightly larger */
-    height: 120px;
+    width: 100px;
+    height: 100px;
     display: flex;
     justify-content: center;
     align-items: center;
     opacity: 0;
-    transition: transform 0.5s ease, opacity 0.3s ease;
+    transition: opacity 0.3s ease;
+    position: absolute;
+    /* Free movement */
+}
+
+#player-fighter {
+    bottom: 0;
+    /* Initial State */
+}
+
+#computer-fighter {
+    top: 0;
+    transform: rotate(180deg);
+    /* Face down */
 }
 
 .fighter svg {
@@ -439,6 +458,8 @@ header {
     height: 100%;
     stroke: var(--text-color);
     fill: none;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.5));
+    /* Slight glow for separation */
 }
 
 .fighter svg circle[fill="currentColor"] {
@@ -451,47 +472,64 @@ header {
 }
 
 /* Animations */
-@keyframes shake {
-    0% {
-        transform: translateY(0) rotate(0);
+/* Animations */
+@keyframes shake-vertical {
+
+    0%,
+    100% {
+        transform: translateY(0);
     }
 
     25% {
-        transform: translateY(-4px) rotate(-2deg);
-    }
-
-    50% {
-        transform: translateY(4px) rotate(2deg);
+        transform: translateY(-5px);
     }
 
     75% {
-        transform: translateY(-4px) rotate(-2deg);
-    }
-
-    100% {
-        transform: translateY(0) rotate(0);
+        transform: translateY(5px);
     }
 }
 
-.shaking {
-    animation: shake 2.5s ease-in-out infinite;
+@keyframes shake-vertical-inverted {
+
+    0%,
+    100% {
+        transform: rotate(180deg) translateY(0);
+    }
+
+    25% {
+        transform: rotate(180deg) translateY(-5px);
+    }
+
+    75% {
+        transform: rotate(180deg) translateY(5px);
+    }
+}
+
+#player-fighter.shaking {
+    animation: shake-vertical 0.5s ease-in-out infinite;
     opacity: 0.6;
 }
 
-@keyframes popIn {
-    0% {
-        transform: scale(0.9);
-        opacity: 0;
-    }
-
-    100% {
-        transform: scale(1);
-        opacity: 1;
-    }
+#computer-fighter.shaking {
+    animation: shake-vertical-inverted 0.5s ease-in-out infinite;
+    opacity: 0.6;
 }
 
-.reveal {
-    animation: popIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+/* Clash / Meet in Middle */
+#player-fighter.reveal {
+    opacity: 1;
+    bottom: 50%;
+    transform: translateY(50%) scale(1.2);
+    /* Move to center + pop */
+    transition: bottom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.4s ease;
+}
+
+#computer-fighter.reveal {
+    opacity: 1;
+    top: 50%;
+    transform: translateY(-50%) rotate(180deg) scale(1.2);
+    /* Move to center + pop */
+    transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), transform 0.4s ease;
 }
 
 #result-text {
@@ -515,7 +553,7 @@ header {
     flex-direction: column;
     align-items: center;
     width: 100%;
-    margin-bottom: 40px;
+    margin-bottom: 20px;
 }
 
 #controls {
