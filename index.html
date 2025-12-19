@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Zen RPS</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#fafafa">
+</head>
+
+<body>
+    <div id="app">
+        <div id="bg-pulse"></div>
+        <header>
+            <div id="score-container">
+                <div class="score-block">
+                    <span class="score-label">PLAYER</span>
+                    <span id="player-score">0</span>
+                </div>
+                <div class="score-divider"></div>
+                <div class="score-block">
+                    <span class="score-label">CPU</span>
+                    <span id="computer-score">0</span>
+                </div>
+            </div>
+            <div id="target-label">FIRST TO 3</div>
+            <button id="reset-btn" aria-label="Reset Score">
+                <svg viewBox="0 0 24 24" class="reset-icon">
+                    <path
+                        d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z" />
+                </svg>
+            </button>
+        </header>
+
+        <main id="game-area">
+            <div id="arena">
+                <div class="fighter" id="player-fighter"></div>
+                <div class="fighter" id="computer-fighter"></div>
+            </div>
+            <div id="game-over-overlay" class="hidden">
+                <button id="play-again-btn">PLAY AGAIN</button>
+                <div class="ad-slot">
+                    <div class="ad-wireframe">ADVERTISEMENT</div>
+                </div>
+            </div>
+            <div id="result-text">CHOOSE</div>
+        </main>
+
+        <footer id="controls-area">
+            <div id="controls">
+                <button class="choice-btn" data-choice="rock" aria-label="Rock">
+                    <svg viewBox="0 0 100 100" class="icon">
+                        <use href="#icon-rock"></use>
+                    </svg>
+                </button>
+                <button class="choice-btn" data-choice="paper" aria-label="Paper">
+                    <svg viewBox="0 0 100 100" class="icon">
+                        <use href="#icon-paper"></use>
+                    </svg>
+                </button>
+                <button class="choice-btn" data-choice="scissors" aria-label="Scissors">
+                    <svg viewBox="0 0 100 100" class="icon">
+                        <use href="#icon-scissors"></use>
+                    </svg>
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Definitions for Designer Icons -->
+    <svg style="display: none;">
+        <!-- Hidden Icon: Abstract Zen Swirl (Ensō-like) -->
+        <symbol id="icon-hidden" viewBox="0 0 100 100">
+            <path d="M50,20 C70,20 85,35 85,55 C85,75 65,85 55,85 C40,85 25,75 25,60" fill="none" stroke="currentColor"
+                stroke-width="3" stroke-linecap="round" stroke-dasharray="0" opacity="0.6" />
+            <path d="M50,20 C35,20 20,30 20,50" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-dasharray="4 6" opacity="0.4" />
+            <circle cx="50" cy="50" r="4" fill="currentColor" opacity="0.5" />
+        </symbol>
+
+        <!-- Rock: Artistic Stippled Stone -->
+        <symbol id="icon-rock" viewBox="0 0 100 100">
+            <!-- Outline -->
+            <path d="M35,75 Q20,65 25,45 Q35,25 55,20 Q80,25 85,50 Q80,75 65,85 Q45,90 35,75 Z" fill="none"
+                stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+            <!-- Texture Lines -->
+            <path d="M35,65 Q40,60 45,65" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"
+                stroke-linecap="round" />
+            <path d="M60,35 Q65,40 70,35" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"
+                stroke-linecap="round" />
+            <circle cx="55" cy="55" r="1.5" fill="currentColor" opacity="0.4" />
+            <circle cx="45" cy="40" r="1" fill="currentColor" opacity="0.4" />
+        </symbol>
+
+        <!-- Paper: Floating Parchment -->
+        <symbol id="icon-paper" viewBox="0 0 100 100">
+            <!-- Organic Page Outline -->
+            <path d="M30,15 Q60,10 80,15 L75,85 Q50,90 25,85 L30,15 Z" fill="none" stroke="currentColor"
+                stroke-width="3" stroke-linejoin="round" stroke-linecap="round" />
+            <!-- Corner Fold -->
+            <path d="M80,15 Q70,25 65,30 L80,30" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linejoin="round" />
+            <!-- Abstract Text Flow -->
+            <path d="M40,35 Q55,32 65,37" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                opacity="0.5" />
+            <path d="M35,50 Q55,48 60,52" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                opacity="0.5" />
+            <path d="M40,65 Q50,65 55,63" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                opacity="0.5" />
+        </symbol>
+
+        <!-- Scissors: Elegant Shears -->
+        <symbol id="icon-scissors" viewBox="0 0 100 100">
+            <!-- Handles -->
+            <path d="M35,75 A10,10 0 1,1 35,55 A10,10 0 1,1 35,75" fill="none" stroke="currentColor" stroke-width="3" />
+            <path d="M65,75 A10,10 0 1,0 65,55 A10,10 0 1,0 65,75" fill="none" stroke="currentColor" stroke-width="3" />
+            <!-- Blades -->
+            <path d="M38,60 C40,55 50,50 80,20" fill="none" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" />
+            <path d="M62,60 C60,55 50,50 20,20" fill="none" stroke="currentColor" stroke-width="3"
+                stroke-linecap="round" />
+            <!-- Pivot -->
+            <circle cx="50" cy="50" r="2.5" fill="currentColor" stroke="none" />
+        </symbol>
+    </svg>
+
+    <script src="script.js"></script>
+    <script src="sw-register.js"></script>
+</body>
+
+</html>

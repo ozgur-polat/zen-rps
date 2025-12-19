@@ -1,0 +1,454 @@
+:root {
+    --bg-color: #fafafa;
+    --text-color: #333333;
+    --accent-win: #d4af37;
+    /* Muted Gold */
+    --accent-loss: #c0392b;
+    /* Soft Crimson */
+    --accent-tie: #7f8c8d;
+    /* Slate Grey */
+    --transition-speed: 0.3s;
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body,
+html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    overflow: hidden;
+    overflow-x: hidden;
+}
+
+/* Background Pulse Layer */
+#bg-pulse {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200vmax;
+    height: 200vmax;
+    background: radial-gradient(circle, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 100%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 0;
+    transition: opacity 1s ease;
+}
+
+#bg-pulse.pulse-win {
+    background: radial-gradient(circle, rgba(212, 175, 55, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+    opacity: 1;
+    animation: expandPulse 1s ease-out forwards;
+}
+
+#bg-pulse.pulse-loss {
+    background: radial-gradient(circle, rgba(192, 57, 43, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+    opacity: 1;
+    animation: expandPulse 1s ease-out forwards;
+}
+
+#bg-pulse.pulse-tie {
+    background: radial-gradient(circle, rgba(127, 140, 141, 0.2) 0%, rgba(255, 255, 255, 0) 70%);
+    opacity: 1;
+    animation: expandPulse 1s ease-out forwards;
+}
+
+@keyframes expandPulse {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0;
+    }
+}
+
+#app {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+}
+
+/* Header & Score */
+header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 15px;
+    width: 100%;
+    position: relative;
+    max-width: 400px;
+}
+
+#score-container {
+    display: flex;
+    align-items: flex-start;
+    /* Align Top */
+    justify-content: space-between;
+    width: 100%;
+    color: var(--text-color);
+    font-weight: 300;
+}
+
+.score-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100px;
+}
+
+.score-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    opacity: 0.4;
+    margin-bottom: 8px;
+    /* Layout: Top */
+}
+
+#player-score,
+#computer-score {
+    font-size: 3rem;
+    /* Prominent Score */
+    font-weight: 100;
+    line-height: 1;
+}
+
+.score-divider {
+    height: 60px;
+    width: 1px;
+    background-color: var(--text-color);
+    opacity: 0.1;
+    margin-top: 5px;
+}
+
+#target-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 2px;
+    opacity: 0.3;
+    margin-top: 15px;
+    text-transform: uppercase;
+}
+
+/* Reset Button */
+#reset-btn {
+    margin-top: 25px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    opacity: 0.2;
+    transition: opacity 0.3s;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#reset-btn:hover {
+    opacity: 0.8;
+}
+
+.reset-icon {
+    width: 20px;
+    height: 20px;
+    fill: var(--text-color);
+}
+
+
+/* Main Arena */
+#game-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    position: relative;
+}
+
+#arena {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 50px;
+    height: 180px;
+}
+
+.fighter {
+    width: 120px;
+    /* Slightly larger */
+    height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: transform 0.5s ease, opacity 0.3s ease;
+}
+
+.fighter svg {
+    width: 100%;
+    height: 100%;
+    stroke: var(--text-color);
+    fill: none;
+}
+
+.fighter svg circle[fill="currentColor"] {
+    fill: var(--text-color);
+    stroke: none;
+}
+
+.fighter.active {
+    opacity: 1;
+}
+
+/* Animations */
+@keyframes shake {
+    0% {
+        transform: translateY(0) rotate(0);
+    }
+
+    25% {
+        transform: translateY(-4px) rotate(-2deg);
+    }
+
+    50% {
+        transform: translateY(4px) rotate(2deg);
+    }
+
+    75% {
+        transform: translateY(-4px) rotate(-2deg);
+    }
+
+    100% {
+        transform: translateY(0) rotate(0);
+    }
+}
+
+.shaking {
+    animation: shake 2.5s ease-in-out infinite;
+    opacity: 0.6;
+}
+
+@keyframes popIn {
+    0% {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.reveal {
+    animation: popIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+#result-text {
+    font-size: 3.5rem;
+    /* Large and Elegant */
+    letter-spacing: 8px;
+    /* Airy */
+    text-transform: uppercase;
+    font-weight: 100;
+    /* Thin */
+    min-height: 1.2em;
+    opacity: 0.8;
+    transition: color 0.3s ease;
+    margin-top: 10px;
+    text-align: center;
+}
+
+/* Controls */
+#controls-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 40px;
+}
+
+#controls {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+}
+
+.choice-btn {
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 50%;
+    width: 90px;
+    height: 90px;
+    cursor: pointer;
+    padding: 22px;
+    transition: all 0.4s ease;
+    opacity: 0.7;
+    position: relative;
+    overflow: hidden;
+}
+
+.choice-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.5s, height 0.5s;
+}
+
+.choice-btn:hover {
+    border-color: rgba(0, 0, 0, 0.2);
+    transform: translateY(-4px);
+    opacity: 1;
+}
+
+.choice-btn:hover::after {
+    width: 100%;
+    height: 100%;
+}
+
+.choice-btn:active {
+    transform: scale(0.96);
+}
+
+.choice-btn svg {
+    width: 100%;
+    height: 100%;
+    stroke: var(--text-color);
+    fill: none;
+}
+
+.disabled {
+    pointer-events: none;
+    opacity: 0.3;
+    transform: scale(0.98);
+}
+
+@media (max-width: 350px) {
+    #arena {
+        gap: 15px;
+    }
+
+    .fighter {
+        width: 100px;
+        height: 100px;
+    }
+
+    .score-block {
+        width: 80px;
+    }
+}
+
+/* Game Over Overlay */
+#game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: none;
+    /* Reset center translate since we are doing full fixed flex */
+    z-index: 1000;
+    transition: opacity 0.5s ease;
+    text-align: center;
+    width: 100vw;
+    /* Blur Effect */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(250, 250, 250, 0.4);
+    height: 100%;
+    /* Cover full arena area */
+    display: flex;
+    /* Flex to center content vertically */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 25px;
+}
+
+.hidden {
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+#play-again-btn {
+    background: transparent;
+    border: 1px solid var(--text-color);
+    color: var(--text-color);
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    font-weight: 300;
+    letter-spacing: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    animation: pulseBtn 3s infinite ease-in-out;
+    background: rgba(250, 250, 250, 0.8);
+    /* Slight frosted backing */
+}
+
+#play-again-btn:hover {
+    background: var(--text-color);
+    color: var(--bg-color);
+    transform: scale(1.05);
+}
+
+@keyframes pulseBtn {
+
+    0%,
+    100% {
+        opacity: 0.8;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Monetization Slot */
+.ad-slot {
+    margin-top: 25px;
+    width: 300px;
+    height: 250px;
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px dashed rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    cursor: default;
+}
+
+.ad-wireframe {
+    font-size: 0.7rem;
+    letter-spacing: 2px;
+    opacity: 0.3;
+    font-weight: 600;
+}
