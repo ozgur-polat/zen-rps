@@ -1,4 +1,123 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Sound System
+    class SoundManager {
+        constructor() {
+            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.enabled = localStorage.getItem('zen-muted') !== 'true';
+        }
+
+        play(type) {
+            if (!this.enabled || this.ctx.state === 'suspended') {
+                if (!this.enabled) return;
+                this.ctx.resume();
+            }
+
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            const now = this.ctx.currentTime;
+
+            switch (type) {
+                case 'tick':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                    break;
+                case 'win':
+                    // Cheering Gong: Complex harmonics + modulation
+                    const root = 261.63; // C4
+
+                    // Main Gong Swing
+                    const osc1 = this.ctx.createOscillator();
+                    osc1.type = 'triangle';
+                    osc1.frequency.setValueAtTime(root, now);
+                    osc1.frequency.exponentialRampToValueAtTime(root * 0.98, now + 1.5);
+
+                    const gain1 = this.ctx.createGain();
+                    gain1.gain.setValueAtTime(0.3, now);
+                    gain1.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+
+                    osc1.connect(gain1);
+                    gain1.connect(this.ctx.destination);
+                    osc1.start(now);
+                    osc1.stop(now + 2.0);
+
+                    // "Cheer" Shimmy (High frequency cluster)
+                    for (let i = 0; i < 3; i++) {
+                        const oscHigh = this.ctx.createOscillator();
+                        oscHigh.type = 'sine';
+                        oscHigh.frequency.value = root * (2 + i * 0.5) + Math.random() * 20;
+                        const gainHigh = this.ctx.createGain();
+                        gainHigh.gain.setValueAtTime(0.1, now);
+                        gainHigh.gain.exponentialRampToValueAtTime(0.001, now + 0.8);
+                        oscHigh.connect(gainHigh);
+                        gainHigh.connect(this.ctx.destination);
+                        oscHigh.start(now);
+                        oscHigh.stop(now + 0.8);
+                    }
+                    break;
+
+                case 'loss':
+                    // Subtle Wind: White noise through Lowpass filter
+                    const bufferSize = this.ctx.sampleRate * 2.0;
+                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = buffer;
+
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(400, now);
+                    filter.frequency.linearRampToValueAtTime(100, now + 2.0); // Filter closes down
+
+                    const noiseGain = this.ctx.createGain();
+                    noiseGain.gain.setValueAtTime(0.15, now);
+                    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 2.0);
+
+                    noise.connect(filter);
+                    filter.connect(noiseGain);
+                    noiseGain.connect(this.ctx.destination);
+                    noise.start(now);
+                    break;
+
+                case 'tie':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(330, now);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                    break;
+                case 'gong':
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(150, now);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 2);
+                    osc.start(now);
+                    osc.stop(now + 2);
+                    break;
+            }
+        }
+
+        toggle() {
+            this.enabled = !this.enabled;
+            localStorage.setItem('zen-muted', !this.enabled);
+            return this.enabled;
+        }
+    }
+
+    const sounds = new SoundManager();
+
     // Game State
     let playerScore = 0;
     let computerScore = 0;
@@ -20,6 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const playAgainBtn = document.getElementById('play-again-btn');
     const gameOverOverlay = document.getElementById('game-over-overlay');
 
+    // New Polish Elements (Assuming they will be added to HTML)
+    const muteBtn = document.getElementById('mute-btn');
+
     // Init
     loadScore();
 
@@ -33,6 +155,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (playAgainBtn) playAgainBtn.addEventListener('click', resetGame);
     if (resetBtn) resetBtn.addEventListener('click', resetGame);
+
+    if (muteBtn) {
+        muteBtn.addEventListener('click', () => {
+            const isEnabled = sounds.toggle();
+            muteBtn.classList.toggle('muted', !isEnabled);
+        });
+        if (!sounds.enabled) muteBtn.classList.add('muted');
+    }
+
+    // Keyboard Support
+    window.addEventListener('keydown', (e) => {
+        if (isProcessing) return;
+
+        switch (e.key.toLowerCase()) {
+            case '1': case 'r': playRound('rock'); break;
+            case '2': case 'p': playRound('paper'); break;
+            case '3': case 's': playRound('scissors'); break;
+            case ' ': if (isGameOver) resetGame(); break;
+            case 'escape': resetGame(); break;
+        }
+    });
 
     function resetGame() {
         if (isProcessing) return;
@@ -76,11 +219,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let count = 3;
         resultText.innerText = count;
+        sounds.play('tick');
 
         const interval = setInterval(() => {
             count--;
             if (count > 0) {
                 resultText.innerText = count;
+                sounds.play('tick');
             } else {
                 clearInterval(interval);
 
@@ -131,18 +276,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (result === 'win') {
             playerScore++;
-            resultText.innerText = "VICTORY";
+            resultText.innerText = "YOU WON";
             resultText.style.color = "var(--accent-win)";
             bgPulse.classList.add('pulse-win');
+            sounds.play('win');
         } else if (result === 'loss') {
             computerScore++;
-            resultText.innerText = "DEFEAT";
+            resultText.innerText = "YOU LOST";
             resultText.style.color = "var(--accent-loss)";
             bgPulse.classList.add('pulse-loss');
+            sounds.play('loss');
         } else {
             resultText.innerText = "DRAW";
             resultText.style.color = "var(--accent-tie)";
             bgPulse.classList.add('pulse-tie');
+            sounds.play('tie');
         }
 
         updateScoreUI();
@@ -170,6 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
             resultText.innerText = "MATCH LOST";
             resultText.style.color = "var(--accent-loss)";
         }
+        sounds.play('gong');
 
         // Show Play Again Overlay
         if (gameOverOverlay) gameOverOverlay.classList.remove('hidden');
